@@ -18,8 +18,9 @@ class mysqlbd:
         self.usuario = datos_conexion["user"]
         self.password = datos_conexion["pass"]
         self.conectado = False
+        self.Autocommit = False
         
-    def conectar( self, bbdd = '' ):
+    def conectar( self, modo = 'd', bbdd = '' ):
         '''
         Aqui podemos pasarle un parametro en la conexion buffered = True/False
         '''
@@ -36,7 +37,7 @@ class mysqlbd:
             self.conectado = True
             # self.cursor = self.conn.cursor(dictionary = True) # dictionary = True esto nos devuelve los registros como un diccionario
             self.cursor = self.conn.cursor(named_tuple = True) # named_tuple = True nos devuelve los registros como tuplas
-            
+            # self.cursor = self.conn.cursor(raw = True) # raw = True no hace la conversion a tipos python.
         except Exception as exc:
             print('Error en la conexión !!!')
             print(f'El error es: {exc}')    
@@ -64,17 +65,56 @@ class mysqlbd:
         if len(resultado) > 1:
             return resultado[0]
         else:
-            return resultado       
-        
+            return resultado    
+    
+    def ejecutar(self, sql):
+        try:
+            self.cursor.execute(sql)   
+        except Exception as exc:
+            print(f'Error al ejecutar la operacion: {sql}.')
+            
+    def commit(self):
+        try:
+            self.conn.commit()
+        except Exception as exc:
+            print('No se ha podido ejecutar el Commit.')
+
+
+    # Funciones para manejar el AutoCommit:
+    # setAutocommit: para poner el AutoCommit a True
+    # clearAutoCommit: para poner el AutoCommit a False ( por defecto )
+    
+    def setAutocommit(self):
+        try:
+            self.conn.autocommit = True
+            self.Autocommit = True
+            
+        except Exception as exc:
+            print('No se ha podido modificar el AutoCommit.')
+            
+    def clearAutocommit(self):
+        try:
+            self.conn.autocommit = False
+            self.Autocommit = False
+            
+        except Exception as exc:
+            print('No se ha podido modificar el AutoCommit')
+
+
+
+
+
 if __name__ == '__main__':
     astrobd = {'host': '10.159.94.253', 'puerto': '3306', 'user': 'mysql', 'pass': 'omega'}
     miBD = mysqlbd('astrobd', astrobd)
+
     miBD.conectar('astro_platform')
     sql = "SELECT * FROM astro_platform.TRABAJOS LIMIT 2"
-    # resultados = miBD.dameTodosRegistros(sql)
-    resultados = miBD.dameUnRegistro(sql)
+    resultados = miBD.dameTodosRegistros(sql)
+    # resultados = miBD.dameUnRegistro(sql)
     
     print(resultados)
     if miBD.conectado:
         miBD.desconectar()
+
         
